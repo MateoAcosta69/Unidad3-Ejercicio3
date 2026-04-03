@@ -1,22 +1,30 @@
 package com.programacion4.unidad3ej3.config;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.programacion4.unidad3ej3.config.exceptions.ConflictException;
 import com.programacion4.unidad3ej3.config.exceptions.CustomException;
+import com.programacion4.unidad3ej3.config.exceptions.ErrorResponse;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
      * Maneja las excepciones personalizadas
-     * @param ex La excepción personalizada
-     * Captura las excepciones personalizadas y las convierte en una respuesta HTTP con el estado de la excepción
+     *
+     * @param ex La excepción personalizada Captura las excepciones
+     * personalizadas y las convierte en una respuesta HTTP con el estado de la
+     * excepción
      */
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<BaseResponse<Object>> handleCustomException(CustomException ex) {
@@ -31,6 +39,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Maneja las excepciones de validación
+     *
      * @param ex La excepción de validación
      * @return La respuesta HTTP con el estado de la excepción
      */
@@ -51,6 +60,7 @@ public class GlobalExceptionHandler {
 
     /**
      * Maneja las excepciones genéricas
+     *
      * @param ex La excepción genérica
      * @return La respuesta HTTP con el estado de la excepción
      */
@@ -63,6 +73,20 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toString())
                 .build();
 
-        return ResponseEntity.internalServerError().body(response); 
+        return ResponseEntity.internalServerError().body(response);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(
+            ConflictException ex, HttpServletRequest request) {
+
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 }
